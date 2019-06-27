@@ -33,6 +33,7 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -44,6 +45,7 @@ import java.util.Set;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.model.naming.Identifier;
 import org.hibernate.boot.spi.MetadataImplementor;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
@@ -58,12 +60,19 @@ import org.hibernate.jdbc.Work;
 import org.hibernate.mapping.Table;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.persister.entity.AbstractEntityPersister;
+import org.hibernate.resource.transaction.spi.DdlTransactionIsolator;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
+import org.hibernate.tool.hbm2ddl.SchemaExport.Action;
 import org.hibernate.tool.hbm2ddl.SchemaUpdate;
+import org.hibernate.tool.schema.TargetType;
 import org.hibernate.tool.schema.extract.internal.DatabaseInformationImpl;
 import org.hibernate.tool.schema.extract.spi.DatabaseInformation;
 import org.hibernate.tool.schema.extract.spi.TableInformation;
+import org.hibernate.tool.schema.internal.Helper;
+import org.hibernate.tool.schema.internal.HibernateSchemaManagementTool;
+import org.hibernate.tool.schema.internal.HibernateSchemaManagementTool.JdbcContextImpl;
+import org.hibernate.tool.schema.internal.exec.JdbcContext;
 import org.jbpm.JbpmException;
 import org.jbpm.db.hibernate.JbpmHibernateConfiguration;
 import org.jbpm.logging.db.JDBCExceptionReporter;
@@ -137,10 +146,10 @@ public class JbpmSchema {
 
     configure();
 
-    SchemaExport schemaExport = new SchemaExport(metadataImplementor);
+    SchemaExport schemaExport = new SchemaExport();
     schemaExport.setOutputFile(exportToFile);
     schemaExport.setDelimiter(delimiter);
-    schemaExport.drop(true, exportToDb);
+    schemaExport.drop( EnumSet.of( exportToDb ? TargetType.DATABASE : TargetType.SCRIPT ), metadataImplementor );
 
     @SuppressWarnings( "unchecked" )
     List<Exception> schemaExceptions = schemaExport.getExceptions();
@@ -161,10 +170,10 @@ public class JbpmSchema {
 
     configure();
 
-    SchemaExport schemaExport = new SchemaExport(metadataImplementor);
+    SchemaExport schemaExport = new SchemaExport();
     schemaExport.setOutputFile(exportToFile);
     schemaExport.setDelimiter(delimiter);
-    schemaExport.create(true, exportToDb);
+    schemaExport.create(interpretTarget(true, exportToDb), metadataImplementor );
 
     @SuppressWarnings( "unchecked" )
     List<Exception> schemaExceptions = schemaExport.getExceptions();
@@ -181,14 +190,32 @@ public class JbpmSchema {
       cleanSchema( true, null );
   }
 
+  private EnumSet<TargetType> interpretTarget(boolean script, boolean export)
+  {
+      return EnumSet.of( TargetType.STDOUT, export ? TargetType.DATABASE : TargetType.SCRIPT );
+  }
+
+  private static Action interpretAction(boolean justDrop, boolean justCreate) {
+      if ( justDrop ) {
+          return Action.DROP;
+      }
+      else if ( justCreate ) {
+          return Action.CREATE;
+      }
+      else {
+          return Action.BOTH;
+      }
+
+  }
+
   public void cleanSchema(boolean exportToDb, String exportToFile) {
 
     configure();
 
-    SchemaExport schemaExportForDrop = new SchemaExport(metadataImplementor);
+    SchemaExport schemaExportForDrop = new SchemaExport();
     schemaExportForDrop.setOutputFile(exportToFile);
     schemaExportForDrop.setDelimiter(delimiter);
-    schemaExportForDrop.execute( true, exportToDb, false, false );
+    schemaExportForDrop.execute( interpretTarget(true, exportToDb), interpretAction(false, false), metadataImplementor );
 
     @SuppressWarnings( "unchecked" )
     List<Exception> schemaExceptions = schemaExportForDrop.getExceptions();
@@ -209,10 +236,11 @@ public class JbpmSchema {
 
     configure();
 
-    SchemaUpdate schemaUpdate = new SchemaUpdate(metadataImplementor);
+    SchemaUpdate schemaUpdate = new SchemaUpdate();
     schemaUpdate.setOutputFile(exportToFile);
     schemaUpdate.setDelimiter(delimiter);
-    schemaUpdate.execute(true, exportToDb);
+
+    schemaUpdate.execute(interpretTarget(true, exportToDb), metadataImplementor );
 
     @SuppressWarnings( "unchecked" )
     List<Exception> schemaExceptions = schemaUpdate.getExceptions();
@@ -387,7 +415,7 @@ public class JbpmSchema {
               JbpmSchema.execute(sql, statement, showSql);
             }
             else {
-              Iterator scripts = table.sqlAlterStrings( getDialect(), metadataImplementor, tableInformation, getDefaultCatalog(), getDefaultSchema() );
+              Iterator scripts = table.sqlAlterStrings( getDialect(), metadataImplementor, tableInformation, Identifier.toIdentifier( getDefaultCatalog() ), Identifier.toIdentifier( getDefaultSchema() ) );
               for (Iterator script = scripts; script.hasNext();) {
                   String sql = (String) script.next();
                   JbpmSchema.execute(sql, statement, showSql);
@@ -411,24 +439,17 @@ public class JbpmSchema {
 //    final SchemaManagementTool schemaManagementTool = serviceRegistry.getService( SchemaManagementTool.class );
 //    final SchemaMigrator schemaMigrator = schemaManagementTool.getSchemaMigrator( cfgService.getSettings() );
     final JdbcServices jdbcServices = serviceRegistry.getService( JdbcServices.class );
-    final JdbcConnectionAccess jdbcConnectionAccess = jdbcServices.getBootstrapJdbcConnectionAccess();
+    final HibernateSchemaManagementTool schemaManagement = serviceRegistry.getService(HibernateSchemaManagementTool.class);
 
     final DatabaseInformation databaseInformation;
-    try {
-      databaseInformation = new DatabaseInformationImpl(
-        serviceRegistry,
-        serviceRegistry.getService( JdbcEnvironment.class ),
-        jdbcConnectionAccess,
-        metadataImplementor.getDatabase().getDefaultNamespace().getPhysicalName().getCatalog(),
-        metadataImplementor.getDatabase().getDefaultNamespace().getPhysicalName().getSchema()
-      );
-    }
-    catch (SQLException e) {
-      throw jdbcServices.getSqlExceptionHelper().convert(
-        e,
-        "Error creating DatabaseInformation for schema migration"
-      );
-    }
+
+    JdbcContext jdbcContext = schemaManagement.resolveJdbcContext( jbpmHibernateConfiguration.getConfigurationProxy().getProperties() );
+    DdlTransactionIsolator ddl = schemaManagement.getDdlTransactionIsolator( jdbcContext );
+    databaseInformation = Helper.buildDatabaseInformation( serviceRegistry,
+                                                           ddl,
+                                                           metadataImplementor.getDatabase().getDefaultNamespace().getName() );
+
+
     return databaseInformation;
   }
 

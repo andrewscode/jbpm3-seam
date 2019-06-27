@@ -1,14 +1,20 @@
 package org.jbpm.persistence.db;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import javax.naming.NamingException;
 import javax.naming.Reference;
+import javax.persistence.EntityGraph;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceUnitUtil;
+import javax.persistence.Query;
+import javax.persistence.SynchronizationType;
+import javax.persistence.criteria.CriteriaBuilder;
 
-import org.hibernate.Cache;
 import org.hibernate.CustomEntityDirtinessStrategy;
 import org.hibernate.EntityNameResolver;
 import org.hibernate.HibernateException;
@@ -21,10 +27,7 @@ import org.hibernate.StatelessSession;
 import org.hibernate.StatelessSessionBuilder;
 import org.hibernate.TypeHelper;
 import org.hibernate.boot.spi.SessionFactoryOptions;
-import org.hibernate.cache.spi.QueryCache;
-import org.hibernate.cache.spi.Region;
-import org.hibernate.cache.spi.UpdateTimestampsCache;
-import org.hibernate.cache.spi.access.RegionAccessStrategy;
+import org.hibernate.cache.spi.CacheImplementor;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Settings;
 import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
@@ -43,14 +46,13 @@ import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.exception.spi.SQLExceptionConverter;
 import org.hibernate.id.IdentifierGenerator;
 import org.hibernate.id.factory.IdentifierGeneratorFactory;
-import org.hibernate.internal.NamedQueryRepository;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.metadata.CollectionMetadata;
+import org.hibernate.metamodel.spi.MetamodelImplementor;
 import org.hibernate.persister.collection.CollectionPersister;
 import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.proxy.EntityNotFoundDelegate;
 import org.hibernate.service.spi.ServiceRegistryImplementor;
-import org.hibernate.stat.Statistics;
 import org.hibernate.stat.spi.StatisticsImplementor;
 import org.hibernate.type.Type;
 import org.hibernate.type.TypeResolver;
@@ -139,11 +141,6 @@ public class MockSessionFactory implements SessionFactoryImplementor {
     }
 
     @Override
-    public Statistics getStatistics() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean isClosed() {
         return isClosed;
     }
@@ -174,10 +171,6 @@ public class MockSessionFactory implements SessionFactoryImplementor {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Map getAllSecondLevelCacheRegions() {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public CollectionPersister getCollectionPersister(String role)
@@ -236,16 +229,8 @@ public class MockSessionFactory implements SessionFactoryImplementor {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public QueryCache getQueryCache() {
-        throw new UnsupportedOperationException();
-    }
 
-    @Override
-    public QueryCache getQueryCache(String regionName)
-            throws HibernateException {
-        throw new UnsupportedOperationException();
-    }
+
 
     @Override
     public QueryPlanCache getQueryPlanCache() {
@@ -274,10 +259,6 @@ public class MockSessionFactory implements SessionFactoryImplementor {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Region getSecondLevelCacheRegion(String regionName) {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public Settings getSettings() {
@@ -294,10 +275,6 @@ public class MockSessionFactory implements SessionFactoryImplementor {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public UpdateTimestampsCache getUpdateTimestampsCache() {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     public Session openTemporarySession() throws HibernateException {
@@ -337,11 +314,6 @@ public class MockSessionFactory implements SessionFactoryImplementor {
     }
 
     @Override
-    public Cache getCache() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public boolean containsFetchProfileDefinition(String name) {
         throw new UnsupportedOperationException();
     }
@@ -353,11 +325,6 @@ public class MockSessionFactory implements SessionFactoryImplementor {
 
     @Override
     public TypeResolver getTypeResolver() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Properties getProperties() {
         throw new UnsupportedOperationException();
     }
 
@@ -417,24 +384,6 @@ public class MockSessionFactory implements SessionFactoryImplementor {
     }
 
     @Override
-    public RegionAccessStrategy getSecondLevelCacheRegionAccessStrategy( String regionName )
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public RegionAccessStrategy getNaturalIdCacheRegionAccessStrategy( String regionName )
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public NamedQueryRepository getNamedQueryRepository()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Iterable<EntityNameResolver> iterateEntityNameResolvers()
     {
         throw new UnsupportedOperationException();
@@ -468,8 +417,193 @@ public class MockSessionFactory implements SessionFactoryImplementor {
         throw new UnsupportedOperationException();
     }
 
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public Region getNaturalIdCacheRegion(String arg0) {
+    public EntityManager createEntityManager()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public EntityManager createEntityManager( Map map )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public EntityManager createEntityManager( SynchronizationType synchronizationType )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public EntityManager createEntityManager( SynchronizationType synchronizationType, Map map )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CriteriaBuilder getCriteriaBuilder()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isOpen()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PersistenceUnitUtil getPersistenceUnitUtil()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addNamedQuery( String name, Query query )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T> T unwrap( Class<T> cls )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T> void addNamedEntityGraph( String graphName, EntityGraph<T> entityGraph )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T> List<EntityGraph<? super T>> findEntityGraphsByType( Class<T> entityClass )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Type resolveParameterBindType( Object bindValue )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Type resolveParameterBindType( Class clazz )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getUuid()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getName()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CacheImplementor getCache()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public StatisticsImplementor getStatistics()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public org.hibernate.query.spi.NamedQueryRepository getNamedQueryRepository()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MetamodelImplementor getMetamodel()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public EntityGraph findEntityGraphByName( String name )
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, Object> getProperties()
+    {
         throw new UnsupportedOperationException();
     }
 }

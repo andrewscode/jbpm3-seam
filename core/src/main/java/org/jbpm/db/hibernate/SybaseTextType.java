@@ -29,27 +29,27 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Objects;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.HibernateException;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.internal.util.StringHelper;
-import org.hibernate.internal.util.compare.EqualsHelper;
 import org.hibernate.type.Type;
 import org.hibernate.usertype.EnhancedUserType;
 
 /**
  * Replacement for {@link org.hibernate.type.TextType} made to work around a <em>feature</em> in the
  * jConnect driver when setting a text parameter to <code>null</code>. Specifically, the call:
- * 
+ *
  * <pre>
  * PreparedStatement st;
  * st.setNull(index, Types.CLOB);
  * </pre>
- * 
+ *
  * throws an SQLException with SQL state "JZ0SL" and reason "Unsupported SQL type".
- * 
+ *
  * @see <a href="https://jira.jboss.org/jira/browse/JBPM-1818">JBPM-1818</a>
  * @author Alejandro Guizar
  */
@@ -68,27 +68,33 @@ public class SybaseTextType implements EnhancedUserType, Serializable {
     return log;
   }
 
-  public Object assemble(Serializable cached, Object owner) throws HibernateException {
+  @Override
+public Object assemble(Serializable cached, Object owner) throws HibernateException {
     return cached != null ? deepCopy(cached) : null;
   }
 
-  public Object deepCopy(Object value) throws HibernateException {
+  @Override
+public Object deepCopy(Object value) throws HibernateException {
     return value;
   }
 
-  public Serializable disassemble(Object value) throws HibernateException {
+  @Override
+public Serializable disassemble(Object value) throws HibernateException {
     return value != null ? (Serializable) deepCopy(value) : null;
   }
 
-  public boolean equals(Object x, Object y) throws HibernateException {
-    return EqualsHelper.equals(x, y);
+  @Override
+public boolean equals(Object x, Object y) throws HibernateException {
+    return Objects.equals(x, y);
   }
 
-  public int hashCode(Object x) throws HibernateException {
+  @Override
+public int hashCode(Object x) throws HibernateException {
     return x.hashCode();
   }
 
-  public boolean isMutable() {
+  @Override
+public boolean isMutable() {
     return false;
   }
 
@@ -204,15 +210,18 @@ public class SybaseTextType implements EnhancedUserType, Serializable {
     st.setCharacterStream(index, null, 0);
   }
 
-  public Object replace(Object original, Object target, Object owner) throws HibernateException {
+  @Override
+public Object replace(Object original, Object target, Object owner) throws HibernateException {
     return original;
   }
 
-  public Class returnedClass() {
+  @Override
+public Class returnedClass() {
     return String.class;
   }
 
-  public int[] sqlTypes() {
+  @Override
+public int[] sqlTypes() {
     return new int[] { sqlType() };
   }
 
@@ -220,15 +229,18 @@ public class SybaseTextType implements EnhancedUserType, Serializable {
     return Types.CLOB;
   }
 
-  public String objectToSQLString(Object value) {
+  @Override
+public String objectToSQLString(Object value) {
     return '\'' + (String) value + '\'';
   }
 
-  public Object fromXMLString(String xml) {
+  @Override
+public Object fromXMLString(String xml) {
     return xml != null && xml.length() > 0 ? fromStringValue(xml) : null;
   }
 
-  public String toXMLString(Object value) {
+  @Override
+public String toXMLString(Object value) {
     return toString(value);
   }
 
@@ -244,17 +256,21 @@ public class SybaseTextType implements EnhancedUserType, Serializable {
     return xml;
   }
 
-	public Object nullSafeGet(ResultSet rs, String[] names,
-			SessionImplementor session, Object owner) throws HibernateException,
-			SQLException {
-		
-		return nullSafeGet(rs, names, owner);
-	}
+    @Override
+    public Object nullSafeGet(ResultSet rs, String[] names,
+        SharedSessionContractImplementor session, Object owner) throws HibernateException,
+            SQLException {
 
-	public void nullSafeSet(PreparedStatement st, Object value, int index,
-			SessionImplementor session) throws HibernateException, SQLException {	
-		
-		nullSafeSet(st, value, index);
-	
-	}
+        return nullSafeGet(rs, names, owner);
+    }
+
+    @Override
+    public void nullSafeSet(PreparedStatement st, Object value, int index,
+        SharedSessionContractImplementor session) throws HibernateException, SQLException {
+
+        nullSafeSet(st, value, index);
+
+    }
+
+
 }

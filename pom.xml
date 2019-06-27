@@ -13,7 +13,7 @@
   <groupId>org.jbpm.jbpm3</groupId>
   <artifactId>jbpm</artifactId>
   <packaging>pom</packaging>
-  <version>3.2.10-1-SP3_seam2_hibernate5-SNAPSHOT</version>
+  <version>3.2.10-1-SP3_seam2_hibernate53-SNAPSHOT</version>
 
   <!-- Source Control Management -->
   <scm>
@@ -46,8 +46,8 @@
     <!-- Hibernate 5.1 and older versions require at least Java 1.6 and JDBC 4.0. -->
     <!-- When building Hibernate 5.1 or older from sources, you need Java 1.7 due to a bug in the JDK 1.6 compiler. -->
 
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
 
     <!-- Dependency versions -->
     <cargo.version>1.0.3</cargo.version>
@@ -276,7 +276,7 @@
       <dependency>
         <groupId>org.hibernate</groupId>
         <artifactId>hibernate-core</artifactId>
-        <version>5.0.10.Final</version>
+        <version>5.3.10.Final</version>
       </dependency>
       <dependency>
         <groupId>org.codehaus.izpack</groupId>

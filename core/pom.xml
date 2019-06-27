@@ -18,7 +18,7 @@
   <parent>
     <groupId>org.jbpm.jbpm3</groupId>
     <artifactId>jbpm</artifactId>
-    <version>3.2.10-1-SP3_seam2_hibernate5-SNAPSHOT</version>
+    <version>3.2.10-1-SP3_seam2_hibernate53-SNAPSHOT</version>
   </parent>
 
   <!-- Dependencies -->
@@ -122,7 +122,7 @@
     <dependency>
         <groupId>org.hibernate</groupId>
         <artifactId>hibernate-ehcache</artifactId>
-        <version>5.0.10.Final</version>
+        <version>5.3.10.Final</version>
         <exclusions>
             <exclusion>
                 <groupId>org.slf4j</groupId>
